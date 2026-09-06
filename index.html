@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>My AI</title>
+
+<style>
+:root{
+ --bg:#0b0d10;
+ --panel:#11151b;
+ --panel2:#181d24;
+ --border:#2a3039;
+ --text:#f4f5f7;
+ --muted:#9ca3af;
+ --accent:#10a37f;
+ --danger:#ef4444;
+}
+
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--text);
+ font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+ height:100vh;
+ overflow:hidden;
+}
+
+.app{
+ display:flex;
+ height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar{
+ width:280px;
+ background:#080a0d;
+ border-right:1px solid var(--border);
+ display:flex;
+ flex-direction:column;
+ padding:12px;
+}
+
+.logo{
+ font-size:21px;
+ font-weight:700;
+ padding:12px;
+}
+
+.new-chat{
+ width:100%;
+ padding:13px;
+ border:1px solid var(--border);
+ background:var(--panel);
+ color:white;
+ border-radius:10px;
+ cursor:pointer;
+ font-size:15px;
+}
+
+.history{
+ flex:1;
+ overflow:auto;
+ margin-top:15px;
+}
+
+.history-item{
+ padding:11px;
+ border-radius:8px;
+ color:#d1d5db;
+ cursor:pointer;
+ white-space:nowrap;
+ overflow:hidden;
+ text-overflow:ellipsis;
+}
+
+.history-item:hover{
+ background:var(--panel2);
+}
+
+/* MAIN */
+.main{
+ flex:1;
+ display:flex;
+ flex-direction:column;
+ min-width:0;
+}
+
+.topbar{
+ height:60px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:0 16px;
+ border-bottom:1px solid var(--border);
+ background:rgba(11,13,16,.92);
+}
+
+.model{
+ background:transparent;
+ color:white;
+ border:1px solid var(--border);
+ border-radius:8px;
+ padding:8px;
+ outline:none;
+}
+
+.menu{
+ display:none;
+}
+
+/* CHAT */
+.chat{
+ flex:1;
+ overflow-y:auto;
+ padding:20px 12px 160px;
+ scroll-behavior:smooth;
+}
+
+.message{
+ width:min(900px,100%);
+ margin:0 auto 25px;
+ display:flex;
+ gap:14px;
+}
+
+.avatar{
+ width:34px;
+ height:34px;
+ border-radius:50%;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ flex-shrink:0;
+ background:var(--panel2);
+}
+
+.content{
+ flex:1;
+ min-width:0;
+ line-height:1.65;
+ white-space:pre-wrap;
+ word-wrap:break-word;
+}
+
+.user .avatar{
+ background:#2563eb;
+}
+
+.actions{
+ display:flex;
+ gap:6px;
+ margin-top:8px;
+}
+
+.small-btn{
+ background:transparent;
+ color:var(--muted);
+ border:1px solid var(--border);
+ border-radius:6px;
+ padding:5px 8px;
+ cursor:pointer;
+}
+
+/* ATTACHMENT */
+.attachment{
+ width:min(900px,100%);
+ margin:0 auto 12px;
+ display:none;
+}
+
+.attachment-card{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ padding:10px;
+ background:var(--panel2);
+ border:1px solid var(--border);
+ border-radius:12px;
+}
+
+.attachment img{
+ width:65px;
+ height:65px;
+ object-fit:cover;
+ border-radius:8px;
+}
+
+.remove{
+ margin-left:auto;
+ color:#ef4444;
+ cursor:pointer;
+}
+
+/* COMPOSER */
+.composer-area{
+ position:absolute;
+ bottom:0;
+ left:280px;
+ right:0;
+ padding:15px;
+ background:linear-gradient(transparent,var(--bg) 30%);
+}
+
+.composer{
+ width:min(900px,100%);
+ margin:auto;
+ background:var(--panel);
+ border:1px solid var(--border);
+ border-radius:18px;
+ padding:10px;
+ box-shadow:0 10px 40px rgba(0,0,0,.3);
+}
+
+textarea{
+ width:100%;
+ min-height:28px;
+ max-height:180px;
+ resize:none;
+ border:0;
+ outline:none;
+ background:transparent;
+ color:white;
+ font-size:16px;
+ padding:8px;
+}
+
+.toolbar{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+}
+
+.tools{
+ display:flex;
+ gap:7px;
+}
+
+.tool{
+ width:38px;
+ height:38px;
+ border:0;
+ border-radius:9px;
+ background:transparent;
+ color:#d1d5db;
+ font-size:18px;
+ cursor:pointer;
+}
+
+.tool:hover{
+ background:var(--panel2);
+}
+
+.send{
+ width:40px;
+ height:40px;
+ border:0;
+ border-radius:10px;
+ background:white;
+ color:#111;
+ cursor:pointer;
+ font-size:18px;
+}
+
+.send.stop{
+ background:var(--danger);
+ color:white;
+}
+
+.drop-zone{
+ position:fixed;
+ inset:0;
+ display:none;
+ align-items:center;
+ justify-content:center;
+ background:rgba(0,0,0,.75);
+ z-index:50;
+}
+
+.drop-box{
+ padding:50px;
+ border:2px dashed var(--accent);
+ border-radius:20px;
+ background:var(--panel);
+ text-align:center;
+ font-size:20px;
+}
+
+/* MOBILE */
+@media(max-width:700px){
+
+ .sidebar{
+  display:none;
+ }
+
+ .menu{
+  display:block;
+  background:none;
+  color:white;
+  border:0;
+  font-size:22px;
+ }
+
+ .composer-area{
+  left:0;
+ }
+
+ .topbar{
+  height:55px;
+ }
+
+ .chat{
+  padding-left:10px;
+  padding-right:10px;
+ }
+
+ .message{
+  gap:9px;
+ }
+
+ .avatar{
+  width:30px;
+  height:30px;
+  font-size:13px;
+ }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<aside class="sidebar">
+
+<div class="logo">🤖 My AI</div>
+
+<button class="new-chat" onclick="newChat()">
+＋ New chat
+</button>
+
+<div class="history" id="history"></div>
+
+</aside>
+
+<main class="main">
+
+<header class="topbar">
+
+<button class="menu" onclick="toggleSidebar()">☰</button>
+
+<select class="model" id="model">
+<option value="gpt-5.6">GPT</option>
+</select>
+
+<div>⚙️</div>
+
+</header>
+
+<section class="chat" id="chat">
+
+<div class="message">
+
+<div class="avatar">🤖</div>
+
+<div class="content">
+<b>My AI</b><br>
+Hello 👋<br>
+Main tumhara personal AI assistant hoon. Text bhejo ya image upload karo.
+</div>
+
+</div>
+
+</section>
+
+<div class="attachment" id="attachment">
+
+<div class="attachment-card">
+
+<img id="preview">
+
+<div id="fileName">Image</div>
+
+<div class="remove" onclick="removeFile()">✕</div>
+
+</div>
+
+</div>
+
+<div class="composer-area">
+
+<div class="composer">
+
+<textarea
+id="input"
+placeholder="Message My AI..."
+oninput="resizeInput(this)"
+onkeydown="handleKey(event)"
+></textarea>
+
+<div class="toolbar">
+
+<div class="tools">
+
+<button class="tool"
+onclick="document.getElementById('file').click()">
+📎
+</button>
+
+<button class="tool"
+onclick="document.getElementById('file').click()">
+🖼️
+</button>
+
+<input
+id="file"
+type="file"
+hidden
+accept="image/*,.pdf,.txt,.csv"
+onchange="handleFile(event)"
+>
+
+</div>
+
+<button class="send" id="send" onclick="sendMessage()">
+➤
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</main>
+
+</div>
+
+<div class="drop-zone" id="dropZone">
+<div class="drop-box">
+📁<br><br>
+Drop your image or file here
+</div>
+</div>
+
+<script>
+
+const chat=document.getElementById("chat");
+const input=document.getElementById("input");
+const fileInput=document.getElementById("file");
+const attachment=document.getElementById("attachment");
+const preview=document.getElementById("preview");
+const fileName=document.getElementById("fileName");
+const send=document.getElementById("send");
+
+let selectedFile=null;
+let controller=null;
+
+/* CHAT HISTORY */
+
+function saveHistory(){
+
+ const messages=[...chat.querySelectorAll(".message")];
+
+ localStorage.setItem(
+  "my_ai_chat",
+  JSON.stringify(
+   messages.map(x=>x.innerText)
+  )
+ );
+
+}
+
+function loadHistory(){
+
+ const data=localStorage.getItem("my_ai_chat");
+
+ if(!data)return;
+
+ const messages=JSON.parse(data);
+
+ if(messages.length===0)return;
+
+ chat.innerHTML="";
+
+ messages.forEach((text,i)=>{
+
+  addMessage(
+   text,
+   i%2===0 ? "ai" : "user",
+   false
+  );
+
+ });
+
+}
+
+function addHistory(){
+
+ const history=document.getElementById("history");
+
+ const item=document.createElement("div");
+
+ item.className="history-item";
+
+ item.textContent=
+  input.value.substring(0,35) || "New conversation";
+
+ history.prepend(item);
+
+}
+
+/* MESSAGE */
+
+function addMessage(text,type="ai",save=true){
+
+ const wrapper=document.createElement("div");
+
+ wrapper.className="message "+type;
+
+ const avatar=document.createElement("div");
+
+ avatar.className="avatar";
+
+ avatar.textContent=
+  type==="user" ? "👤" : "🤖";
+
+ const content=document.createElement("div");
+
+ content.className="content";
+
+ content.textContent=text;
+
+ wrapper.appendChild(avatar);
+ wrapper.appendChild(content);
+
+ if(type==="ai"){
+
+  const actions=document.createElement("div");
+
+  actions.className="actions";
+
+  actions.innerHTML=`
+   <button class="small-btn"
+   onclick="copyText(this)">Copy</button>
+
+   <button class="small-btn"
+   onclick="regenerate()">Regenerate</button>
+  `;
+
+  content.appendChild(actions);
+ }
+
+ chat.appendChild(wrapper);
+
+ chat.scrollTop=chat.scrollHeight;
+
+ if(save)saveHistory();
+
+ return content;
+}
+
+/* SEND */
+
+async function sendMessage(){
+
+ const text=input.value.trim();
+
+ if(!text && !selectedFile)return;
+
+ const file=selectedFile;
+
+ addMessage(
+  text || "📎 "+file.name,
+  "user"
+ );
+
+ input.value="";
+ resizeInput(input);
+
+ addHistory();
+
+ const ai=addMessage("Thinking…","ai");
+
+ send.classList.add("stop");
+ send.textContent="■";
+
+ controller=new AbortController();
+
+ try{
+
+  const formData=new FormData();
+
+  formData.append("message",text);
+
+  formData.append(
+   "model",
+   document.getElementById("model").value
+  );
+
+  if(file){
+   formData.append("file",file);
+  }
+
+  /*
+   IMPORTANT:
+   Ye endpoint baad mein hum backend mein banayenge.
+   API key yahan nahi hogi.
+  */
+
+  const response=await fetch("/api/chat",{
+   method:"POST",
+   body:formData,
+   signal:controller.signal
+  });
+
+  if(!response.ok){
+   throw new Error("Server error");
+  }
+
+  const data=await response.json();
+
+  ai.textContent=data.reply || "No response.";
+
+ }catch(error){
+
+  if(error.name==="AbortError"){
+
+   ai.textContent="Generation stopped.";
+
+  }else{
+
+   ai.textContent=
+    "Backend abhi connected nahi hai. Next step mein GPT API connect karenge.";
+
+  }
+
+ }finally{
+
+  send.classList.remove("stop");
+  send.textContent="➤";
+
+  controller=null;
+
+  removeFile();
+
+  saveHistory();
+
+ }
+
+}
+
+/* STOP */
+
+function stopGeneration(){
+
+ if(controller){
+  controller.abort();
+ }
+}
+
+/* BUTTON */
+
+send.addEventListener("click",function(){
+
+ if(controller){
+  stopGeneration();
+ }
+
+});
+
+/* FILE */
+
+function handleFile(event){
+
+ const file=event.target.files[0];
+
+ if(!file)return;
+
+ selectedFile=file;
+
+ fileName.textContent=file.name;
+
+ if(file.type.startsWith("image/")){
+
+  preview.src=URL.createObjectURL(file);
+  preview.style.display="block";
+
+ }else{
+
+  preview.style.display="none";
+
+ }
+
+ attachment.style.display="block";
+
+}
+
+function removeFile(){
+
+ selectedFile=null;
+
+ fileInput.value="";
+
+ attachment.style.display="none";
+
+ preview.src="";
+
+}
+
+/* INPUT */
+
+function resizeInput(el){
+
+ el.style.height="auto";
+
+ el.style.height=
+  Math.min(el.scrollHeight,180)+"px";
+
+}
+
+function handleKey(e){
+
+ if(e.key==="Enter" && !e.shiftKey){
+
+  e.preventDefault();
+
+  sendMessage();
+
+ }
+
+}
+
+/* COPY */
+
+function copyText(button){
+
+ const content=
+  button.parentElement.parentElement
+  .childNodes[0].textContent;
+
+ navigator.clipboard.writeText(content);
+
+ button.textContent="Copied!";
+
+ setTimeout(()=>{
+  button.textContent="Copy";
+ },1200);
+
+}
+
+/* REGENERATE */
+
+function regenerate(){
+
+ const messages=
+  [...chat.querySelectorAll(".message")];
+
+ if(messages.length<2)return;
+
+ const lastUser=
+  messages[messages.length-2]
+  .querySelector(".content")
+  ?.textContent;
+
+ if(lastUser){
+
+  input.value=lastUser;
+
+  sendMessage();
+
+ }
+
+}
+
+/* NEW CHAT */
+
+function newChat(){
+
+ chat.innerHTML="";
+
+ localStorage.removeItem("my_ai_chat");
+
+ addMessage(
+  "New chat started. 👋",
+  "ai"
+ );
+
+}
+
+/* SIDEBAR */
+
+function toggleSidebar(){
+
+ const sidebar=
+  document.querySelector(".sidebar");
+
+ sidebar.style.display=
+  sidebar.style.display==="flex"
+  ? "none"
+  : "flex";
+
+}
+
+/* DRAG & DROP */
+
+document.addEventListener("dragover",e=>{
+
+ e.preventDefault();
+
+ document.getElementById("dropZone")
+ .style.display="flex";
+
+});
+
+document.addEventListener("dragleave",e=>{
+
+ if(e.clientX<=0 || e.clientY<=0){
+
+  document.getElementById("dropZone")
+  .style.display="none";
+
+ }
+
+});
+
+document.addEventListener("drop",e=>{
+
+ e.preventDefault();
+
+ document.getElementById("dropZone")
+ .style.display="none";
+
+ const file=e.dataTransfer.files[0];
+
+ if(file){
+
+  selectedFile=file;
+
+  fileName.textContent=file.name;
+
+  if(file.type.startsWith("image/")){
+
+   preview.src=URL.createObjectURL(file);
+   preview.style.display="block";
+
+  }
+
+  attachment.style.display="block";
+
+ }
+
+});
+
+loadHistory();
+
+</script>
+
+</body>
+  </html>
